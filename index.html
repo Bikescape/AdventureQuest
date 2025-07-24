@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdventureQuest - Aventuras Digitales</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Supabase JS -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <!-- Pantalla de Carga -->
+    <div id="loading-screen" class="screen">
+        <div class="loading-content">
+            <div class="logo">🗺️ AdventureQuest</div>
+            <div class="loading-spinner"></div>
+            <p>Cargando aventuras...</p>
+        </div>
+    </div>
+
+    <!-- Pantalla Principal -->
+    <div id="main-screen" class="screen hidden">
+        <header class="main-header">
+            <div class="logo">🗺️ AdventureQuest</div>
+            <div class="auth-section">
+                <div id="auth-buttons" class="auth-buttons">
+                    <button id="login-btn" class="btn btn-secondary">Iniciar Sesión</button>
+                    <button id="register-btn" class="btn btn-secondary">Registrarse</button>
+                </div>
+                <div id="user-info" class="user-info hidden">
+                    <span id="user-email"></span>
+                    <button id="logout-btn" class="btn btn-secondary">Cerrar Sesión</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="hero-section">
+                <h1>Crea y Juega Aventuras Digitales</h1>
+                <p>Diseña búsquedas del tesoro, tours guiados y juegos de escape interactivos</p>
+            </div>
+
+            <div class="action-cards">
+                <div class="card" id="create-adventure-card">
+                    <div class="card-icon">🎯</div>
+                    <h3>Crear Aventura</h3>
+                    <p>Diseña tu propia aventura digital con estaciones interactivas</p>
+                    <button class="btn btn-primary" id="create-adventure-btn">Crear Nueva Aventura</button>
+                </div>
+
+                <div class="card" id="play-adventure-card">
+                    <div class="card-icon">🎮</div>
+                    <h3>Jugar Aventura</h3>
+                    <p>Explora aventuras creadas por otros usuarios</p>
+                    <button class="btn btn-primary" id="play-adventure-btn">Explorar Aventuras</button>
+                </div>
+
+                <div class="card" id="multiplayer-card">
+                    <div class="card-icon">👥</div>
+                    <h3>Multijugador</h3>
+                    <p>Crea o únete a una sala para jugar con amigos</p>
+                    <button class="btn btn-primary" id="multiplayer-btn">Modo Multijugador</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Pantalla de Autenticación -->
+    <div id="auth-screen" class="screen hidden">
+        <div class="auth-container">
+            <button class="back-btn" id="auth-back-btn">← Volver</button>
+            <div class="auth-form">
+                <h2 id="auth-title">Iniciar Sesión</h2>
+                <form id="auth-form">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <input type="password" id="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="auth-submit-btn">Iniciar Sesión</button>
+                </form>
+                <p class="auth-switch">
+                    <span id="auth-switch-text">¿No tienes cuenta?</span>
+                    <button type="button" id="auth-switch-btn">Registrarse</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantalla de Creación de Aventuras -->
+    <div id="create-screen" class="screen hidden">
+        <header class="screen-header">
+            <button class="back-btn" id="create-back-btn">← Volver</button>
+            <h1>Crear Nueva Aventura</h1>
+            <div class="header-actions">
+                <button class="btn btn-secondary" id="save-adventure-btn">💾 Guardar</button>
+                <button class="btn btn-primary" id="preview-adventure-btn">👁️ Vista Previa</button>
+            </div>
+        </header>
+
+        <main class="create-content">
+            <div class="adventure-info">
+                <div class="form-group">
+                    <label for="adventure-name">Nombre de la Aventura</label>
+                    <input type="text" id="adventure-name" placeholder="Ej: El Tesoro del Parque Central">
+                </div>
+                <div class="form-group">
+                    <label for="adventure-description">Descripción</label>
+                    <textarea id="adventure-description" placeholder="Describe tu aventura..."></textarea>
+                </div>
+            </div>
+
+            <div class="stations-section">
+                <div class="section-header">
+                    <h3>Estaciones</h3>
+                    <button class="btn btn-primary" id="add-station-btn">+ Agregar Estación</button>
+                </div>
+                <div id="stations-list" class="stations-list">
+                    <!-- Las estaciones se agregarán dinámicamente aquí -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Pantalla de Lista de Aventuras -->
+    <div id="adventures-screen" class="screen hidden">
+        <header class="screen-header">
+            <button class="back-btn" id="adventures-back-btn">← Volver</button>
+            <h1>Aventuras Disponibles</h1>
+        </header>
+
+        <main class="adventures-content">
+            <div id="adventures-list" class="adventures-list">
+                <!-- Las aventuras se cargarán dinámicamente aquí -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Pantalla de Juego -->
+    <div id="game-screen" class="screen hidden">
+        <header class="game-header">
+            <button class="back-btn" id="game-back-btn">✕ Salir</button>
+            <div class="game-info">
+                <h2 id="game-adventure-name">Nombre de la Aventura</h2>
+                <div class="game-stats">
+                    <span id="game-station-info">Estación 1/5</span>
+                    <span id="game-score">Puntos: 0</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-content">
+            <div id="station-content" class="station-content">
+                <!-- El contenido de la estación se cargará dinámicamente aquí -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Pantalla de Multijugador -->
+    <div id="multiplayer-screen" class="screen hidden">
+        <header class="screen-header">
+            <button class="back-btn" id="multiplayer-back-btn">← Volver</button>
+            <h1>Modo Multijugador</h1>
+        </header>
+
+        <main class="multiplayer-content">
+            <div class="multiplayer-options">
+                <div class="card">
+                    <h3>Crear Sala</h3>
+                    <p>Crea una nueva sala de juego para tus amigos</p>
+                    <button class="btn btn-primary" id="create-room-btn">Crear Sala</button>
+                </div>
+
+                <div class="card">
+                    <h3>Unirse a Sala</h3>
+                    <p>Únete a una sala existente con un código</p>
+                    <div class="form-group">
+                        <input type="text" id="room-code-input" placeholder="Código de sala">
+                        <button class="btn btn-primary" id="join-room-btn">Unirse</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Pantalla de Sala de Juego -->
+    <div id="room-screen" class="screen hidden">
+        <header class="screen-header">
+            <button class="back-btn" id="room-back-btn">← Salir de la Sala</button>
+            <h1>Sala: <span id="room-code-display"></span></h1>
+            <div class="header-actions">
+                <button class="btn btn-primary" id="start-game-btn">🚀 Iniciar Juego</button>
+            </div>
+        </header>
+
+        <main class="room-content">
+            <div class="room-info">
+                <h3 id="room-adventure-name">Aventura Seleccionada</h3>
+                <p id="room-adventure-description">Descripción de la aventura</p>
+            </div>
+
+            <div class="players-section">
+                <h3>Jugadores en la Sala</h3>
+                <div id="players-list" class="players-list">
+                    <!-- Los jugadores se mostrarán dinámicamente aquí -->
+                </div>
+            </div>
+
+            <div class="leaderboard-section">
+                <h3>Clasificación</h3>
+                <div id="leaderboard" class="leaderboard">
+                    <!-- La clasificación se mostrará dinámicamente aquí -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para Crear/Editar Estación -->
+    <div id="station-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="station-modal-title">Crear Estación</h3>
+                <button class="modal-close" id="station-modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="station-form">
+                    <div class="form-group">
+                        <label for="station-name">Nombre de la Estación</label>
+                        <input type="text" id="station-name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="station-type">Tipo de Estación</label>
+                        <select id="station-type" required>
+                            <option value="quiz">Quiz</option>
+                            <option value="mission">Misión</option>
+                            <option value="qr">Código QR</option>
+                            <option value="location">Ubicación GPS</option>
+                        </select>
+                    </div>
+
+                    <!-- Campos específicos para Quiz -->
+                    <div id="quiz-fields" class="station-fields">
+                        <div class="form-group">
+                            <label for="quiz-question">Pregunta</label>
+                            <textarea id="quiz-question"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Respuestas</label>
+                            <input type="text" id="quiz-answer-1" placeholder="Respuesta 1">
+                            <input type="text" id="quiz-answer-2" placeholder="Respuesta 2">
+                            <input type="text" id="quiz-answer-3" placeholder="Respuesta 3">
+                            <input type="text" id="quiz-answer-4" placeholder="Respuesta 4">
+                        </div>
+                        <div class="form-group">
+                            <label for="quiz-correct">Respuesta Correcta</label>
+                            <select id="quiz-correct">
+                                <option value="0">Respuesta 1</option>
+                                <option value="1">Respuesta 2</option>
+                                <option value="2">Respuesta 3</option>
+                                <option value="3">Respuesta 4</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="quiz-hint">Pista (opcional)</label>
+                            <input type="text" id="quiz-hint" placeholder="Pista para ayudar a los jugadores">
+                        </div>
+                        <div class="form-group">
+                            <label for="quiz-time-limit">Límite de tiempo (segundos, opcional)</label>
+                            <input type="number" id="quiz-time-limit" min="10" max="300" placeholder="60">
+                        </div>
+                    </div>
+
+                    <!-- Campos específicos para Misión -->
+                    <div id="mission-fields" class="station-fields hidden">
+                        <div class="form-group">
+                            <label for="mission-description">Descripción de la Misión</label>
+                            <textarea id="mission-description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="mission-hint">Pista (opcional)</label>
+                            <input type="text" id="mission-hint">
+                        </div>
+                        <div class="form-group">
+                            <label for="mission-time-limit">Límite de tiempo (segundos, opcional)</label>
+                            <input type="number" id="mission-time-limit" min="10" max="600" placeholder="120">
+                        </div>
+                    </div>
+
+                    <!-- Campos específicos para QR -->
+                    <div id="qr-fields" class="station-fields hidden">
+                        <div class="form-group">
+                            <label for="qr-code">Código QR</label>
+                            <input type="text" id="qr-code" placeholder="Texto del código QR">
+                        </div>
+                        <div class="form-group">
+                            <label for="qr-message">Mensaje al escanear</label>
+                            <textarea id="qr-message"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Campos específicos para Ubicación -->
+                    <div id="location-fields" class="station-fields hidden">
+                        <div class="form-group">
+                            <label>Ubicación en el Mapa</label>
+                            <div id="location-map" class="location-map"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="location-latitude">Latitud</label>
+                            <input type="number" id="location-latitude" step="any" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="location-longitude">Longitud</label>
+                            <input type="number" id="location-longitude" step="any" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="location-radius">Radio (metros)</label>
+                            <input type="number" id="location-radius" value="50" min="10" max="1000">
+                        </div>
+                        <div class="form-group">
+                            <label for="location-message">Mensaje al llegar</label>
+                            <textarea id="location-message"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Campos de Medios (para todos los tipos de estación) -->
+                    <div id="media-fields" class="station-fields">
+                        <h4>Archivos Multimedia (Opcional)</h4>
+                        <div class="form-group">
+                            <label for="station-image">Imagen</label>
+                            <input type="file" id="station-image" accept="image/*">
+                            <div id="image-preview" class="media-preview hidden">
+                                <img id="preview-img" src="" alt="Vista previa">
+                                <button type="button" class="remove-media" onclick="removeImage()">✕</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="station-audio">Audio</label>
+                            <input type="file" id="station-audio" accept="audio/*">
+                            <div id="audio-preview" class="media-preview hidden">
+                                <audio id="preview-audio" controls></audio>
+                                <button type="button" class="remove-media" onclick="removeAudio()">✕</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="station-cancel-btn">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="station-save-btn" form="station-form">Guardar Estación</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Seleccionar Aventura (Multijugador) -->
+    <div id="adventure-select-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Seleccionar Aventura</h3>
+                <button class="modal-close" id="adventure-select-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="adventure-select-list" class="adventure-select-list">
+                    <!-- Las aventuras se cargarán dinámicamente aquí -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Ingresar Nombre de Jugador -->
+    <div id="player-name-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Unirse a la Sala</h3>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="player-name-input">Tu Nombre</label>
+                    <input type="text" id="player-name-input" placeholder="Ingresa tu nombre" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="player-name-cancel">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="player-name-confirm">Unirse</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="multiplayer-realtime.js"></script>
+    <script src="media-handler.js"></script>
+    <script src="timer-hints.js"></script>
+    <script src="templates.js"></script>
+</body>
+</html>
+
